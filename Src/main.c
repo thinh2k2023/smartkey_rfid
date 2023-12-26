@@ -46,6 +46,8 @@
 #include "stdio.h"
 #include "stm32f1xx_hal.h"
 #include "i2c-lcd.h"
+
+#include "key_scan.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,29 +57,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define R1_PORT GPIOB
-#define R1_PIN GPIO_PIN_15
 
-#define R2_PORT GPIOB
-#define R2_PIN GPIO_PIN_14
-
-#define R3_PORT GPIOB
-#define R3_PIN GPIO_PIN_13
-
-#define R4_PORT GPIOB
-#define R4_PIN GPIO_PIN_12
-
-#define C1_PORT GPIOB
-#define C1_PIN GPIO_PIN_11
-
-#define C2_PORT GPIOB
-#define C2_PIN GPIO_PIN_10
-
-#define C3_PORT GPIOB
-#define C3_PIN GPIO_PIN_1
-
-#define C4_PORT GPIOB
-#define C4_PIN GPIO_PIN_0
 
 I2C_HandleTypeDef hi2c1;
 SPI_HandleTypeDef hspi1;
@@ -98,131 +78,74 @@ uint8_t RF2[8] = {0x02, 0x69, 0x63, 0x6D, 0x8B, 0x40, 0x75, 0x78};
 char password[] = "1234";
 char enteredPassword[5]; 
 
-char read_keypad (void)
-{
-	/* Make ROW 1 LOW and all other ROWs HIGH */
-	HAL_GPIO_WritePin (R1_PORT, R1_PIN, GPIO_PIN_RESET);  //Pull the R1 low
-	HAL_GPIO_WritePin (R2_PORT, R2_PIN, GPIO_PIN_SET);  // Pull the R2 High
-	HAL_GPIO_WritePin (R3_PORT, R3_PIN, GPIO_PIN_SET);  // Pull the R3 High
-	HAL_GPIO_WritePin (R4_PORT, R4_PIN, GPIO_PIN_SET);  // Pull the R4 High
-	
-	if (!(HAL_GPIO_ReadPin (C1_PORT, C1_PIN)))   // if the Col 1 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C1_PORT, C1_PIN)));   // wait till the button is pressed
-		return 'D';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C2_PORT, C2_PIN)))   // if the Col 2 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C2_PORT, C2_PIN)));   // wait till the button is pressed
-		return '#';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C3_PORT, C3_PIN)))   // if the Col 3 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C3_PORT, C3_PIN)));   // wait till the button is pressed
-		return '0';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C4_PORT, C4_PIN)))   // if the Col 4 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C4_PORT, C4_PIN)));   // wait till the button is pressed
-		return '*';
-	}
-	
-	/* Make ROW 2 LOW and all other ROWs HIGH */
-	HAL_GPIO_WritePin (R1_PORT, R1_PIN, GPIO_PIN_SET);  //Pull the R1 low
-	HAL_GPIO_WritePin (R2_PORT, R2_PIN, GPIO_PIN_RESET);  // Pull the R2 High
-	HAL_GPIO_WritePin (R3_PORT, R3_PIN, GPIO_PIN_SET);  // Pull the R3 High
-	HAL_GPIO_WritePin (R4_PORT, R4_PIN, GPIO_PIN_SET);  // Pull the R4 High
-	
-	if (!(HAL_GPIO_ReadPin (C1_PORT, C1_PIN)))   // if the Col 1 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C1_PORT, C1_PIN)));   // wait till the button is pressed
-		return 'C';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C2_PORT, C2_PIN)))   // if the Col 2 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C2_PORT, C2_PIN)));   // wait till the button is pressed
-		return '9';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C3_PORT, C3_PIN)))   // if the Col 3 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C3_PORT, C3_PIN)));   // wait till the button is pressed
-		return '8';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C4_PORT, C4_PIN)))   // if the Col 4 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C4_PORT, C4_PIN)));   // wait till the button is pressed
-		return '7';
-	}
-	
-	
-	/* Make ROW 3 LOW and all other ROWs HIGH */
-	HAL_GPIO_WritePin (R1_PORT, R1_PIN, GPIO_PIN_SET);  //Pull the R1 low
-	HAL_GPIO_WritePin (R2_PORT, R2_PIN, GPIO_PIN_SET);  // Pull the R2 High
-	HAL_GPIO_WritePin (R3_PORT, R3_PIN, GPIO_PIN_RESET);  // Pull the R3 High
-	HAL_GPIO_WritePin (R4_PORT, R4_PIN, GPIO_PIN_SET);  // Pull the R4 High
-	
-	if (!(HAL_GPIO_ReadPin (C1_PORT, C1_PIN)))   // if the Col 1 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C1_PORT, C1_PIN)));   // wait till the button is pressed
-		return 'B';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C2_PORT, C2_PIN)))   // if the Col 2 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C2_PORT, C2_PIN)));   // wait till the button is pressed
-		return '6';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C3_PORT, C3_PIN)))   // if the Col 3 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C3_PORT, C3_PIN)));   // wait till the button is pressed
-		return '5';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C4_PORT, C4_PIN)))   // if the Col 4 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C4_PORT, C4_PIN)));   // wait till the button is pressed
-		return '4';
-	}
-	
-		
-	/* Make ROW 4 LOW and all other ROWs HIGH */
-	HAL_GPIO_WritePin (R1_PORT, R1_PIN, GPIO_PIN_SET);  //Pull the R1 low
-	HAL_GPIO_WritePin (R2_PORT, R2_PIN, GPIO_PIN_SET);  // Pull the R2 High
-	HAL_GPIO_WritePin (R3_PORT, R3_PIN, GPIO_PIN_SET);  // Pull the R3 High
-	HAL_GPIO_WritePin (R4_PORT, R4_PIN, GPIO_PIN_RESET);  // Pull the R4 High
-	
-	if (!(HAL_GPIO_ReadPin (C1_PORT, C1_PIN)))   // if the Col 1 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C1_PORT, C1_PIN)));   // wait till the button is pressed
-		return 'A';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C2_PORT, C2_PIN)))   // if the Col 2 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C2_PORT, C2_PIN)));   // wait till the button is pressed
-		return '3';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C3_PORT, C3_PIN)))   // if the Col 3 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C3_PORT, C3_PIN)));   // wait till the button is pressed
-		return '2';
-	}
-	
-	if (!(HAL_GPIO_ReadPin (C4_PORT, C4_PIN)))   // if the Col 4 is low
-	{
-		while (!(HAL_GPIO_ReadPin (C4_PORT, C4_PIN)));   // wait till the button is pressed
-		return '1';
-	}
 
+uint8_t state_machine = 0;
+
+
+uint8_t flag_read_com_test = 0;
+
+//
+char save_password[5] = {'1', '2', '3', '4', '5'};
+uint8_t cnt_check_pass = 0;
+char key_item[6];
+
+int cnt_key_read = 0;
+uint8_t read_5_char_key()
+{
+	key_item[5] = '\0';
+
+	uint8_t flag_read_complete = 0;
+	
+	if(flag_release_key == 1)
+	{
+		flag_release_key = 0;
+		if(key == 'D')
+		{
+			cnt_key_read --;
+			key_item[cnt_key_read] = 0;
+			
+			lcd_goto_XY(2,cnt_key_read);
+			lcd_send_string(" ");
+			
+			if(cnt_key_read <= 0)
+			{
+				cnt_key_read = 0;
+			}
+			
+		}
+		else
+		{
+			key_item[cnt_key_read] = key;
+			cnt_key_read ++;
+			
+			lcd_goto_XY(2,0);
+			lcd_send_string(key_item);
+			
+			if(cnt_key_read >= 5)
+			{
+				cnt_key_read = 0;
+				flag_read_complete = 1;
+			}
+			else
+			{
+				flag_read_complete = 0;
+			}
+		}
+	}
+	return flag_read_complete;
 }
+
+void clear_key_5_char()
+{
+	for(uint8_t i = 0; i < 5; i++)
+	{
+		key_item[i] = 0;
+	}
+}
+
+
+
+
 int main(void)
 {
   HAL_Init();
@@ -232,6 +155,8 @@ int main(void)
   MX_SPI1_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
+	
+	HAL_Delay(1000);
 	MFRC522_Init();
 	lcd_init ();
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
@@ -240,138 +165,149 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+	
+
+	
+	
   while (1)
   {
-		if (HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_1) == GPIO_PIN_RESET) 
-			{
-				htim2.Instance->CCR1 = 25;
-				HAL_Delay(4000);
-				htim2.Instance->CCR1 = 45;
-      }
-		if(!MFRC522_Request(PICC_REQIDL, str))
+		key = read_keypad ();
+		
+
+		
+		if(flag_release_key == 1)
 		{
-			if(!MFRC522_Anticoll(str))
-			{				
-				RF[0]=(unsigned char)0x02;	
-				RF[1]=(unsigned char)0x69;			
-				RF[2]=(unsigned char)(str[0]+0x30);		
-				RF[3]=(unsigned char)(str[1]+0x30);		
-				RF[4]=(unsigned char)(str[2]+0x30);		
-				RF[5]=(unsigned char)(str[3]+0x30);		
-				RF[6]=(unsigned char)(str[4]+0x30);		
-				RF[7]=(unsigned char)0x78;
-				HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_RESET);
-				int x=0;int y=0;
-				for(size_t i=0;i< 8;i++)
-				{
-					if(RF[i]!=RF1[i])
-					{
-						x++;
-					}
-				}
-				
-				for(size_t i=0;i< 8;i++)
-				{
-					if(RF[i]!=RF2[i])
-					{
-						y++;
-					}
-				}
-				
-				if (x==0 ||y==0)
-				{
-					HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_SET);
-					lcd_goto_XY(2,3);
-					lcd_send_string("successful");
-					htim1.Instance->CCR1 = 25;
-					HAL_Delay(4000);
-					HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_RESET);
-					htim1.Instance->CCR1 = 45;
-					lcd_clear_display();
-					HAL_Delay(150);
-					lcd_goto_XY(1,0);
-					lcd_send_string("Password: ");
-					lcd_goto_XY(1,11);
-					lcd_send_string(enteredPassword);
-				}
-				else
-						{
-							HAL_GPIO_WritePin(GPIOB,GPIO_PIN_9, GPIO_PIN_SET);
-							lcd_goto_XY(2,5);
-							lcd_send_string("failed");
-							HAL_Delay(1000);
-							HAL_GPIO_WritePin(GPIOB,GPIO_PIN_9, GPIO_PIN_RESET);
-							lcd_clear_display();
-							HAL_Delay(150);
-							lcd_goto_XY(1,0);
-							lcd_send_string("Password: ");
-							lcd_goto_XY(1,11);
-							lcd_send_string(enteredPassword);
-						}
-			HAL_Delay(1000);
+			
+			
+			if(key == 'A')
+			{
+				state_machine = 1;
+				flag_release_key = 0;
+			}
+			else if(key == 'B')
+			{
+				state_machine = 2;
+				flag_release_key = 0;
+			}
+			else if(key == 'C')
+			{
+				state_machine = 0;		//back to main screen
+				flag_release_key = 0;
+			}
+			else
+			{
+				//state_machine = 0;
 			}
 		}
-		key = read_keypad ();
-		if (key!=0x01) 
-			{
-        int len = strlen(enteredPassword);
-        if (len < 4) 
+			
+		if(state_machine == 0)
+		{
+				lcd_goto_XY(1,0);
+				lcd_send_string("Enter password:");
+				uint8_t read_complete_flag = read_5_char_key();
+				HAL_Delay(100);
+				if( read_complete_flag == 1)
+				{
+					for(uint8_t i = 0; i < 5; i ++)
 					{
-              enteredPassword[len] = key;
-              enteredPassword[len + 1] = '\0';
-						
-           }
-				if(key == 0x2A && len > 0)
-					{
-						enteredPassword[len - 1] = '\0';
-						lcd_clear_display();
-						HAL_Delay(150);
-						lcd_goto_XY(1,0);
-						lcd_send_string("Password: ");
-						lcd_goto_XY(1,11);
-						lcd_send_string(enteredPassword);
-					}
-				if(key == 0x23)
-					{
-						if (strcmp(enteredPassword, password) == 0) 
-							{
-								HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_SET);
-								htim1.Instance->CCR1 = 25;
-								lcd_goto_XY(2,3);
-								lcd_send_string("successful");
-								HAL_Delay(4000);
-								HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_RESET);
-								htim1.Instance->CCR1 = 45;
-								memset(enteredPassword, '\0', sizeof(enteredPassword));
-								lcd_clear_display();
-								HAL_Delay(150);
-								lcd_goto_XY(1,0);
-								lcd_send_string("Password: ");
-								lcd_goto_XY(1,11);
-								lcd_send_string(enteredPassword);
-            }
-						else
+						if(key_item[i] == save_password[i])
 						{
-							HAL_GPIO_WritePin(GPIOB,GPIO_PIN_9, GPIO_PIN_SET);
-							lcd_goto_XY(2,5);
-							lcd_send_string("failed");
-							HAL_Delay(2000);
-							HAL_GPIO_WritePin(GPIOB,GPIO_PIN_9, GPIO_PIN_RESET);
-							memset(enteredPassword, '\0', sizeof(enteredPassword));
-							lcd_clear_display();
-							HAL_Delay(150);
-							lcd_goto_XY(1,0);
-							lcd_send_string("Password: ");
-							lcd_goto_XY(1,11);
-							lcd_send_string(enteredPassword);
+							cnt_check_pass ++;
 						}
-					}            
-			}	
+					}
+					if(cnt_check_pass >= 5)
+					{
+						cnt_check_pass = 0;
+						lcd_goto_XY(1,0);
+						clear_key_5_char();
+						lcd_send_string("Open door!         ");
+						HAL_Delay(2000);
+						lcd_goto_XY(2,0);
+						lcd_send_string("                 ");
+						
+						//open door
+					}
+					else
+					{
+						cnt_check_pass = 0;
+						lcd_goto_XY(1,0);
+						clear_key_5_char();
+						lcd_send_string("NG password:      ");
+						HAL_Delay(2000);
+						lcd_goto_XY(2,0);
+						lcd_send_string("                 ");
+					}
+				}
+		}
+		
+		if(state_machine == 1)
+		{
+				lcd_goto_XY(1,0);
+				lcd_send_string("Old password:    ");
+				uint8_t read_complete_flag = read_5_char_key();
+				HAL_Delay(100);
+				if( read_complete_flag == 1)
+				{
+					for(uint8_t i = 0; i < 5; i ++)
+					{
+						if(key_item[i] == save_password[i])
+						{
+							cnt_check_pass ++;
+						}
+					}
+					if(cnt_check_pass >= 5)
+					{
+						cnt_check_pass = 0;
+						clear_key_5_char();
+						lcd_goto_XY(1,0);
+						lcd_send_string("OK!           :");
+						HAL_Delay(1000);
+						state_machine = 3;
+						//open door
+					}
+					else
+					{
+						clear_key_5_char();
+						cnt_check_pass = 0;
+						lcd_goto_XY(1,0);
+						lcd_send_string("NG password:     ");
+						lcd_goto_XY(2,0);
+						lcd_send_string("                 ");
+						HAL_Delay(1000);
+						lcd_goto_XY(2,0);
+						lcd_send_string("                 ");
+						lcd_goto_XY(1,0);
+						lcd_send_string("Old password:     ");
+						HAL_Delay(1000);
+						lcd_goto_XY(2,0);
+						lcd_send_string("                 ");
+					}
+				}
+		}
+		
+		if(state_machine == 3)
+		{
 			lcd_goto_XY(1,0);
-			lcd_send_string("Password: ");
-			lcd_goto_XY(1,11);
-			lcd_send_string(enteredPassword);
-			HAL_Delay(150);
+			lcd_send_string("New password:      ");
+			uint8_t read_complete_flag = read_5_char_key();
+			HAL_Delay(100);
+			if( read_complete_flag == 1)
+			{
+				for(uint8_t i = 0; i < 5; i ++)
+				{
+					save_password[i] = key_item[i];
+				}
+				clear_key_5_char();
+				HAL_Delay(1000);
+				lcd_goto_XY(2,0);
+				lcd_send_string("OK!           :");
+				HAL_Delay(1000);
+				lcd_goto_XY(2,0);
+				lcd_send_string("                 ");
+				state_machine = 0;
+			}			
+		}
+		
   }
   /* USER CODE END 3 */
 }

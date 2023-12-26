@@ -31,3 +31,4 @@ keypad\main.o: ../Inc/stm32f1_rc522.h
 keypad\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdbool.h
 keypad\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\string.h
 keypad\main.o: ../Inc/i2c-lcd.h
+keypad\main.o: ..\key_scan\key_scan.h

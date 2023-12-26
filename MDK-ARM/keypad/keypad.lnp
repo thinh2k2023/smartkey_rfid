@@ -21,6 +21,7 @@
 "keypad\stm32f1xx_hal_spi_ex.o"
 "keypad\stm32f1xx_hal_tim.o"
 "keypad\stm32f1xx_hal_tim_ex.o"
+"keypad\key_scan.o"
 --library_type=microlib --strict --scatter "keypad\keypad.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
