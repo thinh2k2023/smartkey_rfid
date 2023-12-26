@@ -71,18 +71,20 @@ static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 
 uint8_t str[MAX_LEN];
-unsigned char RF[8];
+char RF_check[2][5];
+char RF_data[5];
+char RF_save[3][5];
 uint8_t key;
-uint8_t RF1[8] = {0x02, 0x69, 0x83, 0x49, 0x80, 0xC6, 0xBC, 0x78};
-uint8_t RF2[8] = {0x02, 0x69, 0x63, 0x6D, 0x8B, 0x40, 0x75, 0x78};
 char password[] = "1234";
 char enteredPassword[5]; 
 
-
+uint8_t save_card_id[3][4]; 
 uint8_t state_machine = 0;
 
 
 uint8_t flag_read_com_test = 0;
+
+uint8_t num_add_card = 0;
 
 //
 char save_password[5] = {'1', '2', '3', '4', '5'};
@@ -137,12 +139,66 @@ uint8_t read_5_char_key()
 
 void clear_key_5_char()
 {
+	cnt_key_read = 0;
 	for(uint8_t i = 0; i < 5; i++)
 	{
 		key_item[i] = 0;
 	}
 }
 
+void reset_rf_data()
+{
+	RF_data[0] = 0;		
+	RF_data[1] = 0;		
+	RF_data[2] = 0;		
+	RF_data[3] = 0;		
+	RF_data[4] = 0;
+}
+
+
+uint8_t cnt_read = 0;
+void read_card()
+{
+	if(!MFRC522_Request(PICC_REQIDL, str))
+	{
+		if(!MFRC522_Anticoll(str))
+		{
+			RF_data[0] = str[0];		
+			RF_data[1] = str[1];		
+			RF_data[2] = str[2];		
+			RF_data[3] = str[3];		
+			RF_data[4] = str[4];
+			cnt_read ++;
+		}
+	}
+}
+
+
+uint8_t cnt_check_card = 0;
+uint8_t flag_check_card = 0;
+uint8_t check_card()
+{
+	for(uint8_t i = 0; i < 3; i++)
+	{
+		for(uint8_t j = 0; j < 5; j++)
+		{
+			if((RF_save[i][j] == RF_data[j]) && (cnt_read > 2))
+			{
+				cnt_read = 0;
+				cnt_check_card ++;
+			}
+		}
+	}
+	if(cnt_check_card >= 5)
+	{
+		cnt_check_card = 0;
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
 
 
 
@@ -173,7 +229,6 @@ int main(void)
   {
 		key = read_keypad ();
 		
-
 		
 		if(flag_release_key == 1)
 		{
@@ -188,11 +243,16 @@ int main(void)
 			{
 				state_machine = 2;
 				flag_release_key = 0;
+				cnt_read = 0;
 			}
 			else if(key == 'C')
 			{
 				state_machine = 0;		//back to main screen
 				flag_release_key = 0;
+				HAL_Delay(50);
+				lcd_clear_display();
+				clear_key_5_char();
+				reset_rf_data();
 			}
 			else
 			{
@@ -202,6 +262,24 @@ int main(void)
 			
 		if(state_machine == 0)
 		{
+				read_card();
+				flag_check_card = check_card();
+				if(flag_check_card ==1)
+				{
+					flag_check_card = 0;
+					cnt_check_pass = 0;
+					lcd_goto_XY(1,0);
+					clear_key_5_char();
+					HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_SET);
+					htim1.Instance->CCR1 = 25;
+					HAL_Delay(4000);
+					HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_RESET);
+					htim1.Instance->CCR1 = 45;
+					lcd_goto_XY(2,0);
+					lcd_send_string("                 ");					
+				}
+
+			
 				lcd_goto_XY(1,0);
 				lcd_send_string("Enter password:");
 				uint8_t read_complete_flag = read_5_char_key();
@@ -215,13 +293,17 @@ int main(void)
 							cnt_check_pass ++;
 						}
 					}
-					if(cnt_check_pass >= 5)
+					if(cnt_check_pass >= 5 || (flag_check_card == 1))
 					{
 						cnt_check_pass = 0;
 						lcd_goto_XY(1,0);
 						clear_key_5_char();
 						lcd_send_string("Open door!         ");
-						HAL_Delay(2000);
+						HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_SET);
+						htim1.Instance->CCR1 = 25;
+						HAL_Delay(4000);
+						HAL_GPIO_WritePin(GPIOB,GPIO_PIN_8, GPIO_PIN_RESET);
+						htim1.Instance->CCR1 = 45;
 						lcd_goto_XY(2,0);
 						lcd_send_string("                 ");
 						
@@ -233,7 +315,10 @@ int main(void)
 						lcd_goto_XY(1,0);
 						clear_key_5_char();
 						lcd_send_string("NG password:      ");
-						HAL_Delay(2000);
+						HAL_GPIO_WritePin(GPIOB,GPIO_PIN_9, GPIO_PIN_SET);
+						HAL_Delay(1000);
+						HAL_GPIO_WritePin(GPIOB,GPIO_PIN_9, GPIO_PIN_RESET);
+						HAL_Delay(1000);
 						lcd_goto_XY(2,0);
 						lcd_send_string("                 ");
 					}
@@ -260,8 +345,10 @@ int main(void)
 						cnt_check_pass = 0;
 						clear_key_5_char();
 						lcd_goto_XY(1,0);
-						lcd_send_string("OK!           :");
+						lcd_send_string("OK!            ");
 						HAL_Delay(1000);
+						lcd_goto_XY(2,0);
+						lcd_send_string("                 ");
 						state_machine = 3;
 						//open door
 					}
@@ -273,12 +360,11 @@ int main(void)
 						lcd_send_string("NG password:     ");
 						lcd_goto_XY(2,0);
 						lcd_send_string("                 ");
-						HAL_Delay(1000);
+						HAL_Delay(500);
 						lcd_goto_XY(2,0);
 						lcd_send_string("                 ");
 						lcd_goto_XY(1,0);
 						lcd_send_string("Old password:     ");
-						HAL_Delay(1000);
 						lcd_goto_XY(2,0);
 						lcd_send_string("                 ");
 					}
@@ -298,14 +384,130 @@ int main(void)
 					save_password[i] = key_item[i];
 				}
 				clear_key_5_char();
-				HAL_Delay(1000);
+				HAL_Delay(500);
 				lcd_goto_XY(2,0);
-				lcd_send_string("OK!           :");
-				HAL_Delay(1000);
+				lcd_send_string("OK!                ");
+				HAL_Delay(500);
 				lcd_goto_XY(2,0);
 				lcd_send_string("                 ");
 				state_machine = 0;
 			}			
+		}
+		
+		if(state_machine == 2)
+		{
+			HAL_Delay(50);
+			lcd_goto_XY(1,0);
+			lcd_send_string("Add card:         ");
+			
+			if(flag_release_key == 1)
+			{
+				if(key == '1')
+				{
+					flag_release_key = 0;
+					lcd_goto_XY(2,0);
+					HAL_Delay(50);
+					lcd_send_string("Add card 1!");
+					num_add_card = 1;
+				}
+				else if(key == '2')
+				{
+					flag_release_key = 0;
+					lcd_goto_XY(2,0);
+					HAL_Delay(50);
+					lcd_send_string("Add card 2!");
+					num_add_card = 2;
+				}
+				else if(key == '3')
+				{
+					flag_release_key = 0;
+					lcd_goto_XY(2,0);
+					HAL_Delay(50);
+					lcd_send_string("Add card 3!");
+					num_add_card = 3;
+				}
+			}
+			
+			if(num_add_card == 1)
+			{
+				
+				read_card();
+				if(cnt_read > 3)
+				{
+					
+					//reset flag
+					cnt_read = 0;
+					
+					//save data card
+					for(uint8_t i = 0; i < 5; i++)
+					{
+						RF_save[0][i] = RF_data[i];
+					}
+					
+					//reset RF
+					reset_rf_data();
+					
+					//reset num add card
+					num_add_card = 0;
+					
+					//lcd print
+					lcd_goto_XY(2,0);
+					lcd_send_string("OK!               ");
+				}
+			}
+			
+			if(num_add_card == 2)
+			{
+				
+				read_card();
+				if(cnt_read > 3)
+				{
+					
+					//reset flag
+					cnt_read = 0;
+					
+					//save data card
+					for(uint8_t i = 0; i < 5; i++)
+					{
+						RF_save[1][i] = RF_data[i];
+					}
+					
+					//reset RF
+					reset_rf_data();
+					
+					//reset num add card
+					num_add_card = 0;
+					lcd_goto_XY(2,0);
+					HAL_Delay(50);
+					lcd_send_string("OK!               ");
+				}
+			}
+			
+			if(num_add_card == 3)
+			{
+				
+				read_card();
+				if(cnt_read > 3)
+				{
+					
+					//reset flag
+					cnt_read = 0;
+					
+					//save data card
+					for(uint8_t i = 0; i < 5; i++)
+					{
+						RF_save[2][i] = RF_data[i];
+					}
+					
+					//reset RF
+					reset_rf_data();
+					
+					//reset num add card
+					num_add_card = 0;
+					lcd_goto_XY(2,0);
+					lcd_send_string("OK!               ");
+				}
+			}
 		}
 		
   }
