@@ -339,7 +339,7 @@
               <MiscControls></MiscControls>
               <Define>USE_HAL_DRIVER,STM32F103xB</Define>
               <Undefine></Undefine>
-              <IncludePath>../Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;..\key_scan</IncludePath>
+              <IncludePath>../Inc;../Drivers/STM32F1xx_HAL_Driver/Inc;../Drivers/STM32F1xx_HAL_Driver/Inc/Legacy;../Drivers/CMSIS/Device/ST/STM32F1xx/Include;../Drivers/CMSIS/Include;..\key_scan;..\flash_lib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1351,6 +1351,16 @@
               <FileName>key_scan.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\key_scan\key_scan.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>flash_lib</GroupName>
+          <Files>
+            <File>
+              <FileName>FlASH_PAGE_F1.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\flash_lib\FlASH_PAGE_F1.c</FilePath>
             </File>
           </Files>
         </Group>

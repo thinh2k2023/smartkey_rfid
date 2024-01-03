@@ -48,6 +48,7 @@
 #include "i2c-lcd.h"
 
 #include "key_scan.h"
+#include "FLASH_PAGE_F1.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -70,13 +71,14 @@ static void MX_SPI1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 
+
+
 uint8_t str[MAX_LEN];
 char RF_check[2][5];
 char RF_data[5];
 char RF_save[3][5];
 uint8_t key;
-char password[] = "1234";
-char enteredPassword[5]; 
+
 
 uint8_t save_card_id[3][4]; 
 uint8_t state_machine = 0;
@@ -222,7 +224,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	
-
+	//Flash_Read_Data(0x0801FC00+1024*64 , (uint32_t *) save_password, 5);
 	
 	
   while (1)
@@ -383,6 +385,7 @@ int main(void)
 				{
 					save_password[i] = key_item[i];
 				}
+				//Flash_Write_Data(0x08000000+1024*64 , (uint32_t *)save_password, 5);
 				clear_key_5_char();
 				HAL_Delay(500);
 				lcd_goto_XY(2,0);
